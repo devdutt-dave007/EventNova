@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EventNova — Inter-College Event Management Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background glow effect -->
+  <div class="ambient-glow"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- AUTHENTICATION MODAL / SCREEN -->
+  <div class="modal-backdrop" id="authModal">
+    <div class="modal-dialog modal-dialog-md auth-dialog">
+      <div class="auth-box">
+        <div class="auth-header">
+          <div class="brand-symbol mb-2">EN</div>
+          <h2 class="auth-title">Welcome to EventNova</h2>
+          <p class="auth-subtitle">Select your account type to access campus registrations or institute event hosting.</p>
+
+          <div class="auth-type-toggle">
+            <button class="auth-toggle-btn active" id="userLoginToggleBtn" onclick="setAuthMode('USER_LOGIN')">User Sign In</button>
+            <button class="auth-toggle-btn" id="instLoginToggleBtn" onclick="setAuthMode('INST_LOGIN')">Institute Portal</button>
+            <button class="auth-toggle-btn" id="registerToggleBtn" onclick="setAuthMode('REGISTER')">New Registration</button>
+          </div>
+        </div>
+
+        <!-- VIEW 1: USER LOGIN -->
+        <div class="auth-pane active" id="userLoginPane">
+          <form onsubmit="handleUserLogin(event)">
+            <div class="form-group">
+              <label>Student / Faculty / External Email</label>
+              <input type="email" id="userEmailInput" class="form-input" placeholder="e.g. devdutt@lju.edu.in" required>
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="userPassInput" class="form-input" placeholder="Enter password" required>
+            </div>
+
+            <!-- Demo Quick Sign-In Chips -->
+            <div class="demo-login-box">
+              <span class="demo-label">⚡ ONE-CLICK DEMO CREDENTIALS</span>
+              <div class="demo-chips">
+                <button type="button" class="demo-chip" onclick="quickFillUser('devdutt@lju.edu.in', 'Devdutt@123')">
+                  <strong>Devdutt Sharma</strong> (Student @ LJ)
+                </button>
+                <button type="button" class="demo-chip" onclick="quickFillUser('priya@nirma.edu.in', 'Priya@123')">
+                  <strong>Priya Mehta</strong> (Student @ Nirma)
+                </button>
+                <button type="button" class="demo-chip" onclick="quickFillUser('anil.kumar@lju.edu.in', 'Anil@1234')">
+                  <strong>Dr. Anil Kumar</strong> (Faculty @ LJ)
+                </button>
+                <button type="button" class="demo-chip" onclick="quickFillUser('rahul.shah@gmail.com', 'Rahul@123')">
+                  <strong>Rahul Shah</strong> (External Participant)
+                </button>
+              </div>
+            </div>
+
+            <div class="modal-footer justify-between">
+              <button type="button" class="btn btn-ghost" onclick="continueAsGuest()">Browse as Guest (No Login)</button>
+              <button type="submit" class="btn btn-primary" id="userSignInBtn">
+                <span>Sign In as User</span>
+                <span class="btn-arrow">→</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- VIEW 2: INSTITUTE LOGIN -->
+        <div class="auth-pane" id="instLoginPane" style="display: none;">
+          <div class="notice-box mb-4">
+            🏛 <strong>Institute Access Only:</strong> Only accredited educational institutions can manage campus events, view roster exports, and process cancellations.
+          </div>
+          <form onsubmit="handleInstituteLogin(event)">
+            <div class="form-group">
+              <label>Institute Admin Email (must end with .edu.in)</label>
+              <input type="email" id="instEmailInput" class="form-input" placeholder="e.g. admin@lju.edu.in" required>
+            </div>
+            <div class="form-group">
+              <label>Admin Password</label>
+              <input type="password" id="instPassInput" class="form-input" placeholder="Enter institute password" required>
+            </div>
+
+            <!-- Demo Institute Chips -->
+            <div class="demo-login-box">
+              <span class="demo-label">⚡ ONE-CLICK INSTITUTE DEMO</span>
+              <div class="demo-chips">
+                <button type="button" class="demo-chip" onclick="quickFillInst('admin@lju.edu.in', 'Lj@2026Secure')">
+                  <strong>LJ University</strong> (Host Admin)
+                </button>
+                <button type="button" class="demo-chip" onclick="quickFillInst('admin@nirma.edu.in', 'Nirma@2026Pass')">
+                  <strong>Nirma University</strong> (Host Admin)
+                </button>
+                <button type="button" class="demo-chip" onclick="quickFillInst('admin@gu.edu.in', 'Gu@2026Secure')">
+                  <strong>Gujarat University</strong> (Host Admin)
+                </button>
+              </div>
+            </div>
+
+            <div class="modal-footer justify-between">
+              <button type="button" class="btn btn-ghost" onclick="continueAsGuest()">Browse as Guest</button>
+              <button type="submit" class="btn btn-primary" id="instSignInBtn">
+                <span>Sign In to Institute Console</span>
+                <span class="btn-arrow">→</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- VIEW 3: REGISTRATION -->
+        <div class="auth-pane" id="registerPane" style="display: none;">
+          <div class="reg-type-select mb-3">
+            <label class="radio-card inline-card">
+              <input type="radio" name="regAccountType" value="USER" checked onchange="toggleRegAccountType()">
+              <span>User Registration (₹500 Welcome Bonus)</span>
+            </label>
+            <label class="radio-card inline-card">
+              <input type="radio" name="regAccountType" value="INSTITUTE" onchange="toggleRegAccountType()">
+              <span>Institute Registration</span>
+            </label>
+          </div>
+
+          <!-- User Registration Form -->
+          <form id="newUserRegForm" onsubmit="handleUserRegisterSubmit(event)">
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>Full Name *</label>
+                <input type="text" id="regName" class="form-input" placeholder="Your full name" required>
+              </div>
+              <div class="form-group flex-1">
+                <label>Email *</label>
+                <input type="email" id="regEmail" class="form-input" placeholder="name@college.edu or gmail" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>Password *</label>
+                <input type="password" id="regPassword" class="form-input" placeholder="8+ characters" required>
+              </div>
+              <div class="form-group flex-1">
+                <label>Phone Number *</label>
+                <input type="tel" id="regPhone" class="form-input" placeholder="10-digit mobile" required>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>Role *</label>
+                <select id="regRole" class="form-select" onchange="handleRoleChange()" required>
+                  <option value="STUDENT">STUDENT</option>
+                  <option value="FACULTY">FACULTY</option>
+                  <option value="EXTERNAL">EXTERNAL</option>
+                </select>
+              </div>
+              <div class="form-group flex-1" id="regInstituteGroup">
+                <label>Affiliated Institute</label>
+                <select id="regInstituteSelect" class="form-select">
+                  <!-- Injected dynamically -->
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row" id="regStudentFields">
+              <div class="form-group flex-1">
+                <label>Enrollment Number</label>
+                <input type="text" id="regEnrollment" class="form-input" placeholder="e.g. LJ2026IT099">
+              </div>
+            </div>
+
+            <div class="form-row" id="regFacultyFields" style="display: none;">
+              <div class="form-group flex-1">
+                <label>Employee ID</label>
+                <input type="text" id="regEmployeeId" class="form-input" placeholder="e.g. LJEMP0088">
+              </div>
+            </div>
+
+            <div class="modal-footer justify-between">
+              <button type="button" class="btn btn-ghost" onclick="setAuthMode('USER_LOGIN')">Back to Sign In</button>
+              <button type="submit" class="btn btn-primary" id="submitUserRegBtn">
+                <span>Create Account & Claim ₹500</span>
+                <span class="btn-arrow">→</span>
+              </button>
+            </div>
+          </form>
+
+          <!-- Institute Registration Form -->
+          <form id="newInstRegForm" onsubmit="handleInstRegisterSubmit(event)" style="display: none;">
+            <div class="form-group">
+              <label>Institute Full Name *</label>
+              <input type="text" id="instRegName" class="form-input" placeholder="e.g. Indian Institute of Technology" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label>Official Email (ends with .edu.in) *</label>
+                <input type="email" id="instRegEmail" class="form-input" placeholder="admin@institute.edu.in" required>
+              </div>
+              <div class="form-group flex-1">
+                <label>Master Password *</label>
+                <input type="password" id="instRegPassword" class="form-input" placeholder="Strong password" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Campus Address *</label>
+              <input type="text" id="instRegAddress" class="form-input" placeholder="City, State, Highway" required>
+            </div>
+
+            <div class="modal-footer justify-between">
+              <button type="button" class="btn btn-ghost" onclick="setAuthMode('INST_LOGIN')">Back to Institute Login</button>
+              <button type="submit" class="btn btn-primary" id="submitInstRegBtn">
+                <span>Register Institute</span>
+                <span class="btn-arrow">→</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-symbol">EN</div>
+        <div class="brand-text">
+          <span class="brand-title">EVENTNOVA</span>
+          <span class="brand-version">v3.0 ENTERPRISE</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-links">
+        <button class="nav-btn active" data-tab="events">
+          <span class="nav-icon">✦</span> Discover Events
+        </button>
+        <button class="nav-btn" data-tab="registrations" id="navMyRegistrations">
+          <span class="nav-icon">🎟</span> My Registrations
+        </button>
+        <button class="nav-btn" data-tab="institutes">
+          <span class="nav-icon">🏛</span> Institutes
+        </button>
+        <button class="nav-btn" data-tab="ledger">
+          <span class="nav-icon">📊</span> Wallet & Ledger
+        </button>
+        <button class="nav-btn" data-tab="inspector">
+          <span class="nav-icon">⚙</span> DB Inspector
+        </button>
+      </nav>
+
+      <!-- User & Session Controls -->
+      <div class="header-actions">
+        <div class="db-status-badge" id="dbStatusBadge">
+          <span class="pulse-dot"></span>
+          <span id="dbStatusText">MySQL: Connected</span>
+        </div>
+
+        <!-- Logged In User Profile Chip -->
+        <div class="session-profile-card" id="sessionProfileCard">
+          <div class="profile-avatar" id="profileAvatar">U</div>
+          <div class="profile-info">
+            <div class="profile-name-row">
+              <span class="profile-name" id="profileName">Guest User</span>
+              <span class="role-badge" id="profileRoleBadge">GUEST</span>
+            </div>
+            <span class="profile-sub" id="profileSub">No Active Session</span>
+          </div>
+        </div>
+
+        <!-- Wallet / Escrow Balance Pill -->
+        <div class="wallet-pill" id="walletPill" title="Click to view/recharge balance">
+          <span class="wallet-icon">◈</span>
+          <span class="wallet-label" id="walletPillLabel">BALANCE:</span>
+          <span class="wallet-amount" id="sessionBalance">₹0.00</span>
+          <button class="recharge-btn" id="openRechargeModalBtn" title="Recharge Balance">+</button>
+        </div>
+
+        <!-- Auth Action Button (Login / Logout) -->
+        <button class="btn btn-outline btn-xs" id="authActionBtn" onclick="handleAuthAction()">Sign In</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="main-content">
+
+    <!-- HERO SECTION -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <div class="hero-tag">ATOMIC STORED PROCEDURES &bull; STRICT INSTITUTE HOSTING &bull; INNODB RELATIONAL LEDGER</div>
+        <h1 class="hero-title">High-Performance Inter-College Event Management</h1>
+        <p class="hero-desc">
+          Automated eligibility enforcement, FIFO waitlists, atomic wallet transfers, and instant 50%/100% cancellation refunds backed directly by MySQL.
+        </p>
+
+        <div class="hero-cta-group">
+          <button class="btn btn-primary" onclick="switchTab('events')">
+            <span>Explore Live Events</span>
+            <span class="btn-arrow">→</span>
+          </button>
+          <!-- Institute-Only Action with Dynamic Behavior -->
+          <button class="btn btn-secondary" id="openCreateEventBtn" onclick="handleHostEventClick()">
+            <span>+ Host New Event</span>
+          </button>
+          <button class="btn btn-ghost" id="heroRechargeBtn">
+            <span>Recharge Wallet</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Institute Restriction Notice (Shown when a normal user views the page) -->
+      <div class="role-notice-banner" id="userRoleNoticeBanner">
+        <div class="notice-icon">ℹ</div>
+        <div class="notice-text">
+          <strong>Access Rule Enforced:</strong> You are logged in as a <strong>Participant User</strong>. Users can register for events, form teams, and manage wallets. <em>Only accredited Educational Institutes have permission to host campus events.</em>
+        </div>
+      </div>
+
+      <!-- KPI METRICS STRIP -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">TOTAL EVENTS</span>
+            <span class="kpi-tag">PUBLISHED</span>
+          </div>
+          <div class="kpi-value" id="kpiTotalEvents">-</div>
+          <div class="kpi-sub" id="kpiOpenEvents">0 Open for Registration</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">CONFIRMED SEATS</span>
+            <span class="kpi-tag">REGISTRATIONS</span>
+          </div>
+          <div class="kpi-value" id="kpiConfirmedRegs">-</div>
+          <div class="kpi-sub" id="kpiWaitlistRegs">0 in FIFO Waitlist</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">PARTNER INSTITUTES</span>
+            <span class="kpi-tag">ACCREDITED</span>
+          </div>
+          <div class="kpi-value" id="kpiTotalInstitutes">-</div>
+          <div class="kpi-sub">LJ, Nirma, GU & more</div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-header">
+            <span class="kpi-label">USER WALLET POOL</span>
+            <span class="kpi-tag">ESCROW</span>
+          </div>
+          <div class="kpi-value" id="kpiWalletPool">₹0</div>
+          <div class="kpi-sub">Double-entry audit log</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 1: DISCOVER EVENTS -->
+    <section class="tab-pane active" id="tab-events">
+      <!-- Search and Filter Bar -->
+      <div class="filter-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="eventSearchInput" placeholder="Search event title, venue, institute..." autocomplete="off">
+          <button class="search-clear-btn" id="searchClearBtn">&times;</button>
+        </div>
+
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label>CATEGORY</label>
+            <select id="categoryFilter" class="filter-select">
+              <option value="ALL">All Categories</option>
+              <option value="HACKATHON">Hackathons</option>
+              <option value="TECH_FEST">Tech Fests</option>
+              <option value="SEMINAR">Seminars</option>
+              <option value="SPORTS">Sports</option>
+              <option value="FEST">College Fests</option>
+              <option value="MUSIC">Music</option>
+              <option value="DANCE">Dance</option>
+              <option value="DRAMA">Drama</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>ELIGIBILITY</label>
+            <select id="eligibilityFilter" class="filter-select">
+              <option value="ALL">All Participants</option>
+              <option value="STUDENT_NATIVE">Native Students Only</option>
+              <option value="FACULTY_NATIVE">Native Faculty Only</option>
+              <option value="EXTERNAL">External Participants</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>PRICE</label>
+            <select id="priceFilter" class="filter-select">
+              <option value="ALL">All Prices</option>
+              <option value="FREE">Free Events Only</option>
+              <option value="PAID">Paid Events Only</option>
+            </select>
+          </div>
+
+          <button class="btn btn-outline btn-sm" id="resetFiltersBtn">Reset</button>
+        </div>
+      </div>
+
+      <!-- Events Grid -->
+      <div class="section-subhead">
+        <h2 class="subhead-title">Available Campus Events</h2>
+        <span class="counter-badge" id="eventResultCount">0 events found</span>
+      </div>
+
+      <div class="events-grid" id="eventsGrid">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Querying EventNova database...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MY REGISTRATIONS -->
+    <section class="tab-pane" id="tab-registrations">
+      <div class="section-subhead">
+        <div>
+          <h2 class="subhead-title">Personal Registrations & Tickets</h2>
+          <p class="subhead-desc">View confirmed tickets, FIFO waitlist status, and trigger self-cancellations with automated 50% refund processing.</p>
+        </div>
+        <div class="persona-current-pill">
+          Logged in as: <strong id="currentPersonaName">Guest User</strong>
+        </div>
+      </div>
+
+      <div class="registrations-wrapper" id="myRegistrationsContainer">
+        <!-- Registrations loaded dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 3: INSTITUTES -->
+    <section class="tab-pane" id="tab-institutes">
+      <div class="section-subhead">
+        <div>
+          <h2 class="subhead-title">Partner Educational Institutes</h2>
+          <p class="subhead-desc">Accredited institutes hosting inter-college fests, hackathons, and technical symposiums with balance management.</p>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="handleHostEventClick()">+ Host Campus Event</button>
+      </div>
+
+      <div class="institutes-grid" id="institutesGrid">
+        <!-- Institutes cards loaded dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 4: WALLET & FINANCIAL LEDGER -->
+    <section class="tab-pane" id="tab-ledger">
+      <div class="section-subhead">
+        <div>
+          <h2 class="subhead-title">Double-Entry Financial Audit Trail</h2>
+          <p class="subhead-desc">Live immutable ledger records from <code>Wallet_Transaction</code> and <code>Transaction</code> tables, maintained by MySQL stored procedures.</p>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="refreshLedgerBtn">↻ Refresh Ledger</button>
+      </div>
+
+      <div class="ledger-container">
+        <div class="ledger-tabs">
+          <button class="ledger-tab-btn active" data-subtab="wallet-ledger">Wallet Movements (Double Entry)</button>
+          <button class="ledger-tab-btn" data-subtab="event-transactions">Event Ticket Invoices</button>
+        </div>
+
+        <div class="ledger-table-card" id="walletLedgerPane">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>TXN ID</th>
+                  <th>TIMESTAMP</th>
+                  <th>OWNER</th>
+                  <th>TYPE</th>
+                  <th>AMOUNT</th>
+                  <th>BALANCE AFTER</th>
+                  <th>DESCRIPTION</th>
+                </tr>
+              </thead>
+              <tbody id="walletLedgerBody">
+                <tr><td colspan="7" class="text-center">Loading ledger records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="ledger-table-card" id="eventTxnPane" style="display: none;">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>INVOICE #</th>
+                  <th>DATE</th>
+                  <th>PARTICIPANT</th>
+                  <th>EVENT</th>
+                  <th>HOST INSTITUTE</th>
+                  <th>MODE</th>
+                  <th>AMOUNT</th>
+                  <th>STATUS</th>
+                </tr>
+              </thead>
+              <tbody id="eventTxnBody">
+                <tr><td colspan="8" class="text-center">Loading invoice records...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: DB INSPECTOR -->
+    <section class="tab-pane" id="tab-inspector">
+      <div class="section-subhead">
+        <div>
+          <h2 class="subhead-title">EventNova 3.0 Database Schema & Metrics</h2>
+          <p class="subhead-desc">Live introspection of MySQL <code>eventnova3</code> tables, foreign keys, and stored procedure execution counters.</p>
+        </div>
+        <div class="db-meta-chip" id="inspectorDbMeta">Database: eventnova3</div>
+      </div>
+
+      <!-- Architecture Stack Card -->
+      <div class="arch-card">
+        <div class="arch-title">SYSTEM ARCHITECTURAL LAYERS & ROLE ENFORCEMENT</div>
+        <div class="arch-flow">
+          <div class="arch-node">
+            <div class="arch-node-tag">AUTHENTICATION</div>
+            <div class="arch-node-title">Institute vs User</div>
+            <div class="arch-node-desc">Host Privileges vs Attendee Roles</div>
+          </div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-node">
+            <div class="arch-node-tag">BUSINESS LOGIC</div>
+            <div class="arch-node-title">Service Layer</div>
+            <div class="arch-node-desc">Eligibility, Deadlines & Caching</div>
+          </div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-node">
+            <div class="arch-node-tag">DATA ACCESS</div>
+            <div class="arch-node-title">DAO Layer</div>
+            <div class="arch-node-desc">SQL Queries & CallableStatements</div>
+          </div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-node highlight">
+            <div class="arch-node-tag">ATOMIC ENGINE</div>
+            <div class="arch-node-title">Stored Procedures</div>
+            <div class="arch-node-desc">sp_register_and_pay & sp_cancel</div>
+          </div>
+          <div class="arch-arrow">→</div>
+          <div class="arch-node">
+            <div class="arch-node-tag">RELATIONAL STORAGE</div>
+            <div class="arch-node-title">MySQL 5.5 / MariaDB</div>
+            <div class="arch-node-desc">ACID Compliant InnoDB Tables</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Tables Grid -->
+      <div class="inspector-grid" id="inspectorTablesGrid">
+        <!-- Tables injected dynamically -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: REGISTRATION -->
+  <div class="modal-backdrop" id="registrationModal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge">EVENT REGISTRATION</span>
+          <h3 class="modal-title" id="regModalEventTitle">Event Title</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('registrationModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="reg-summary-card">
+          <div class="reg-summary-row">
+            <span>Hosting Institute:</span>
+            <strong id="regModalInstitute">-</strong>
+          </div>
+          <div class="reg-summary-row">
+            <span>Date & Time:</span>
+            <strong id="regModalDateTime">-</strong>
+          </div>
+          <div class="reg-summary-row">
+            <span>Eligibility Rule:</span>
+            <span class="pill pill-mono" id="regModalEligibility">-</span>
+          </div>
+          <div class="reg-summary-row">
+            <span>Participation Type:</span>
+            <span class="pill pill-mono" id="regModalType">-</span>
+          </div>
+          <div class="reg-summary-row highlight-row">
+            <span>Registration Fee:</span>
+            <strong class="price-highlight" id="regModalPrice">₹0.00</strong>
+          </div>
+        </div>
+
+        <form id="registrationForm" onsubmit="handleRegistrationSubmit(event)">
+          <input type="hidden" id="regFormEventId">
+
+          <div class="form-group">
+            <label>Registering As</label>
+            <input type="text" id="regFormUserName" class="form-input" readonly>
+            <small class="form-hint" id="regFormUserHint">Logged in user credentials</small>
+          </div>
+
+          <!-- Team Members Section -->
+          <div id="teamMembersSection" style="display: none;">
+            <div class="team-section-header">
+              <label>TEAM MEMBERS CREDENTIALS</label>
+              <button type="button" class="btn btn-outline btn-xs" id="addTeamMemberBtn">+ Add Member</button>
+            </div>
+            <p class="form-hint">As team leader, your credentials are registered automatically. Add additional teammates below:</p>
+            <div id="teamMembersList" class="team-members-list">
+              <!-- Teammate rows injected dynamically -->
+            </div>
+          </div>
+
+          <div class="form-group" id="paymentModeGroup">
+            <label>Payment Method</label>
+            <div class="radio-cards">
+              <label class="radio-card">
+                <input type="radio" name="paymentMode" value="WALLET" checked>
+                <div class="radio-card-content">
+                  <span class="radio-title">EventNova Wallet</span>
+                  <span class="radio-desc">Instant debit from your in-app balance</span>
+                </div>
+              </label>
+              <label class="radio-card">
+                <input type="radio" name="paymentMode" value="CASH">
+                <div class="radio-card-content">
+                  <span class="radio-title">Cash (Offline Settle)</span>
+                  <span class="radio-desc">Status set to PENDING until desk verification</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('registrationModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="confirmRegBtn">
+              <span>Confirm Registration</span>
+              <span class="btn-arrow">→</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RECHARGE WALLET -->
+  <div class="modal-backdrop" id="rechargeModal">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge">WALLET RECHARGE</span>
+          <h3 class="modal-title">Simulate In-App Top-Up</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('rechargeModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="form-desc">
+          Executes stored procedure <code>sp_recharge_wallet</code> with atomic balance crediting and creates an immutable <code>RECHARGE</code> record in the ledger.
+        </p>
+
+        <form id="rechargeForm" onsubmit="handleRechargeSubmit(event)">
+          <div class="form-group">
+            <label>Target User</label>
+            <input type="text" id="rechargeTargetUser" class="form-input" readonly>
+          </div>
+
+          <div class="form-group">
+            <label>Select Amount (₹)</label>
+            <div class="quick-amount-pills">
+              <button type="button" class="amount-pill" onclick="setRechargeAmount(500)">+ ₹500</button>
+              <button type="button" class="amount-pill" onclick="setRechargeAmount(1000)">+ ₹1,000</button>
+              <button type="button" class="amount-pill" onclick="setRechargeAmount(2500)">+ ₹2,500</button>
+              <button type="button" class="amount-pill" onclick="setRechargeAmount(5000)">+ ₹5,000</button>
+            </div>
+            <input type="number" id="rechargeAmountInput" class="form-input" min="10" step="10" placeholder="Or enter custom amount" required>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('rechargeModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="submitRechargeBtn">
+              <span>Top-Up Wallet</span>
+              <span class="btn-arrow">→</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CREATE EVENT (INSTITUTES ONLY) -->
+  <div class="modal-backdrop" id="createEventModal">
+    <div class="modal-dialog modal-dialog-md">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge">ACCREDITED INSTITUTE CONSOLE</span>
+          <h3 class="modal-title">Host New Campus Event</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('createEventModal')">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="createEventForm" onsubmit="handleCreateEventSubmit(event)">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Host Institute *</label>
+              <select id="eventHostInstitute" class="form-select" required>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div class="form-group flex-2">
+              <label>Event Name *</label>
+              <input type="text" id="eventFormName" class="form-input" placeholder="e.g. HackNova 2026" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Category *</label>
+              <select id="eventFormCategory" class="form-select" required>
+                <option value="HACKATHON">HACKATHON</option>
+                <option value="TECH_FEST">TECH_FEST</option>
+                <option value="SEMINAR">SEMINAR</option>
+                <option value="SPORTS">SPORTS</option>
+                <option value="FEST">FEST</option>
+                <option value="MUSIC">MUSIC</option>
+                <option value="DANCE">DANCE</option>
+                <option value="DRAMA">DRAMA</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>Eligibility *</label>
+              <select id="eventFormEligibility" class="form-select" required>
+                <option value="ALL">ALL (Open to Anyone)</option>
+                <option value="STUDENT_NATIVE">STUDENT_NATIVE (Only Native Students)</option>
+                <option value="FACULTY_NATIVE">FACULTY_NATIVE (Only Native Faculty)</option>
+                <option value="EXTERNAL">EXTERNAL (Only Outside Students)</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>Format *</label>
+              <select id="eventFormType" class="form-select" required>
+                <option value="SOLO">SOLO</option>
+                <option value="TEAM">TEAM</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Description *</label>
+            <textarea id="eventFormDesc" class="form-textarea" rows="3" placeholder="Brief outline, schedule, and judging rules..." required></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-2">
+              <label>Venue *</label>
+              <input type="text" id="eventFormVenue" class="form-input" placeholder="e.g. Auditorium Hall B" required>
+            </div>
+            <div class="form-group flex-1">
+              <label>Capacity *</label>
+              <input type="number" id="eventFormCapacity" class="form-input" min="1" max="10000" value="50" required>
+            </div>
+            <div class="form-group flex-1">
+              <label>Ticket Price (₹) *</label>
+              <input type="number" id="eventFormPrice" class="form-input" min="0" step="1" value="0" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Event Date *</label>
+              <input type="date" id="eventFormDate" class="form-input" required>
+            </div>
+            <div class="form-group flex-1">
+              <label>Start Time *</label>
+              <input type="time" id="eventFormStartTime" class="form-input" value="10:00" required>
+            </div>
+            <div class="form-group flex-1">
+              <label>End Time *</label>
+              <input type="time" id="eventFormEndTime" class="form-input" value="17:00" required>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-ghost" onclick="closeModal('createEventModal')">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="submitCreateEventBtn">
+              <span>Publish Event to Catalog</span>
+              <span class="btn-arrow">→</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: PERMISSION RESTRICTION EXPLANATION -->
+  <div class="modal-backdrop" id="roleRestrictionModal">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge">PERMISSION RESTRICTION</span>
+          <h3 class="modal-title">Institute Access Required</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('roleRestrictionModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="restriction-box">
+          <div class="restriction-icon">🔒</div>
+          <h4>Normal Users Cannot Host Events</h4>
+          <p>
+            In EventNova, only registered <strong>Educational Institutes</strong> (e.g. LJ University, Nirma University) are authorized to host and organize campus events.
+          </p>
+          <p style="margin-top: 10px; color: var(--text-dim); font-size: 12px;">
+            Current Account: <strong id="restrictionCurrentRole">Student</strong>. To host events, please sign in using an accredited Institute administrator account.
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('roleRestrictionModal')">Dismiss</button>
+        <button type="button" class="btn btn-primary" onclick="closeModal('roleRestrictionModal'); openAuthModal('INST_LOGIN')">
+          <span>Switch to Institute Login</span>
+          <span class="btn-arrow">→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: TICKET PRINT VIEW -->
+  <div class="modal-backdrop" id="ticketModal">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <span class="modal-badge">ADMISSION PASS</span>
+          <h3 class="modal-title">EventNova Official Ticket</h3>
+        </div>
+        <button class="modal-close" onclick="closeModal('ticketModal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ticketModalContent">
+        <!-- Ticket receipt injected here -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="window.print()">Print Ticket</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('ticketModal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span class="brand-symbol">EN</span>
+        <span>EventNova Architecture & MySQL Database Engine</span>
+      </div>
+      <div class="footer-meta">
+        <span>Layered Java Backing &bull; MariaDB 10.4 / MySQL 5.5 Engine &bull; Port 5000</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

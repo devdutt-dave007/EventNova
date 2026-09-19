@@ -1,0 +1,43 @@
+# Node.js
+node_modules/
+web/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# Java & Compilation Output
+*.class
+out/
+bin/
+target/
+build/
+*.jar
+*.war
+*.ear
+
+# IDE & Editor files
+.idea/
+*.iml
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sublime-workspace
+*.sublime-project
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs & Database exports/temp
+*.log
+*.tmp
+*.bak
